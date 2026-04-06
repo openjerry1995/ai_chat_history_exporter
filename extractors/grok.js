@@ -45,26 +45,25 @@ function grokGetItems() {
 function grokGetItemsFromCommandMenu() {
   // Opens command menu (Ctrl+K), extracts all conversation links, closes it
   // This is language-independent and shows ALL conversations
-  var dialog = document.querySelector('div[role="dialog"] dialog, dialog');
-  var wasOpen = dialog && dialog.open;
+  // The command menu is a div with data-analytics-name="command_menu" or aria-labelledby
+
+  // Check if command menu is already open
+  var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+  var wasOpen = !!(cmdDialog && cmdDialog.querySelector('[cmdk-list]'));
 
   if (!wasOpen) {
     // Press Ctrl+K to open command menu
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
+    // Wait for dialog to appear
+    var maxWait = 3000;
+    var start = Date.now();
+    while (Date.now() - start < maxWait) {
+      cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+      if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) break;
+    }
   }
 
-  // Wait for dialog to appear
-  var maxWait = 3000;
-  var start = Date.now();
-  while (Date.now() - start < maxWait) {
-    dialog = document.querySelector('div[role="dialog"] dialog, dialog');
-    if (dialog && dialog.open) break;
-    dialog = document.querySelector('dialog[open]');
-    if (dialog) break;
-  }
-
-  // Also check for the command menu by role
-  var cmdDialog = document.querySelector('div[role="dialog"]');
+  // Extract all conversation links from the command menu
   var items = [];
   if (cmdDialog) {
     var links = cmdDialog.querySelectorAll('a[href^="/c/"]');
@@ -77,20 +76,20 @@ function grokGetItemsFromCommandMenu() {
     }
   }
 
-  // If still no items, try generic dialog approach
+  // If still no items, try generic approach - look for any visible /c/ links
   if (items.length === 0) {
     var allLinks = document.querySelectorAll('a[href^="/c/"]');
     for (var j = 0; j < allLinks.length; j++) {
       var link = allLinks[j];
       var txt = link.textContent.trim().replace(/\s+/g, " ");
-      if (txt && link.getAttribute("href")) {
+      if (txt && link.getAttribute("href") && link.offsetParent !== null) {
         items.push({ title: txt, href: link.getAttribute("href") });
       }
     }
   }
 
-  // Close the dialog with Escape
-  if (!wasOpen) {
+  // Close the dialog with Escape if we opened it
+  if (!wasOpen && cmdDialog) {
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     setTimeout(function() {
       document.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape", bubbles: true }));
