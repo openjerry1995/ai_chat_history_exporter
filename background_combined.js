@@ -231,8 +231,8 @@ function grokGetItemsFromCommandMenu() {
 function grokOpenSidebar() {
   // Open command menu via Ctrl+K - works regardless of language
   // This shows ALL conversations grouped by time period
-  var dialog = document.querySelector('div[role="dialog"] dialog, dialog');
-  if (dialog && dialog.open) return; // Already open
+  var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+  if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
 
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
   document.dispatchEvent(new KeyboardEvent("keyup", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
