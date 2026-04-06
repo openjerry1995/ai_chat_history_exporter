@@ -153,14 +153,27 @@ const PLATFORM_REGISTRY = {
       }).filter(Boolean);
     },
     openSidebar: () => {
-      // Find and click Show All button
-      const allElements = document.querySelectorAll('div, span, a, button');
-      for (const el of allElements) {
-        const text = (el.textContent || '').trim();
-        if (text === 'Show All' || text === '显示全部') {
-          el.click();
-          return;
+      // Step 1: Make sure sidebar is open - click sidebar toggle if needed
+      const sidebarToggle = document.querySelector('[aria-label*="sidebar" i], [aria-label*="侧边栏"], [aria-label*="sidebar"]');
+      if (!sidebarToggle) {
+        // Try finding by button text
+        const allBtns = document.querySelectorAll('button');
+        for (const btn of allBtns) {
+          const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+          const text = (btn.textContent || '').toLowerCase().trim();
+          if (label.includes('sidebar') || label.includes('侧边栏') || text.includes('sidebar') || text.includes('侧边栏')) {
+            sidebarToggle = btn;
+            break;
+          }
         }
+      }
+      if (sidebarToggle) sidebarToggle.click();
+
+      // Step 2: Click "Show All" / "显示全部" / "查看全部" button to open command menu
+      const xpath = `//*[text()='Show All' or text()='显示全部' or text()='查看全部' or text()='All']`;
+      const res = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+      if (res.singleNodeValue) {
+        res.singleNodeValue.click();
       }
     }
   },
@@ -359,7 +372,7 @@ async function handleAllHistory(platform, tabId) {
     // Open sidebar
     tryCatchSend({ type: 'export-progress', msg: 'Opening sidebar…' });
     await chrome.scripting.executeScript({ target: { tabId }, func: fns.openSidebar });
-    await sleep(2000);
+    await sleep(4000);
 
     // Scroll to load
     await chrome.scripting.executeScript({
