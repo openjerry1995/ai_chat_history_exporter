@@ -161,31 +161,39 @@ function grokGetItems() {
 
 function grokGetItemsFromCommandMenu() {
   // The command menu should be open after grokOpenSidebar() was called
-  // Look for the dialog and extract all /c/ links
+  // The <a> elements are empty (text is in sibling divs due to CSS grid layout)
+  // We need to find each item, then extract text from sibling divs
   
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-  
   var items = [];
-  if (cmdDialog) {
-    // Command menu is open, extract all conversation links
-    var links = cmdDialog.querySelectorAll('a[href^="/c/"]');
-    for (var i = 0; i < links.length; i++) {
-      var a = links[i];
-      var t = a.textContent.trim().replace(/\s+/g, " ");
-      if (t && a.getAttribute("href")) {
-        items.push({ title: t, href: a.getAttribute("href") });
-      }
-    }
-  }
   
-  // If still no items, try page-level links (in case dialog is not found but sidebar is open)
-  if (items.length === 0) {
-    var allLinks = document.querySelectorAll('a[href^="/c/"]');
-    for (var j = 0; j < allLinks.length; j++) {
-      var link = allLinks[j];
-      var txt = link.textContent.trim().replace(/\s+/g, " ");
-      if (txt && link.getAttribute("href") && link.offsetParent !== null) {
-        items.push({ title: txt, href: link.getAttribute("href") });
+  if (cmdDialog) {
+    // Get all cmdk-item divs that contain conversation links
+    var itemDivs = cmdDialog.querySelectorAll('[cmdk-item][data-value^="conversation:"]');
+    for (var i = 0; i < itemDivs.length; i++) {
+      var item = itemDivs[i];
+      var link = item.querySelector('a[href^="/c/"]');
+      if (!link) continue;
+      
+      var href = link.getAttribute("href");
+      
+      // The text is in a sibling div, not inside <a>
+      // Find the div with text class inside this item
+      var textEl = item.querySelector('[class*="text-fg-primary"]');
+      if (!textEl) {
+        // Try to get any text from the item (excluding time stamps)
+        var allText = item.textContent || '';
+        // Remove timestamp patterns like "3小时前", "昨天", etc.
+        var cleanText = allText.replace(/\d+(小时|天|月|年)前|\d+月\d+日|\d+年\d+月\d+日/g, '').trim();
+        cleanText = cleanText.replace(/\s+/g, ' ').trim();
+        if (cleanText && cleanText.length > 2 && cleanText.indexOf("新建私密聊天") === -1) {
+          items.push({ title: cleanText, href: href });
+        }
+      } else {
+        var title = textEl.textContent.trim().replace(/\s+/g, " ");
+        if (title && title.indexOf("新建私密聊天") === -1) {
+          items.push({ title: title, href: href });
+        }
       }
     }
   }
