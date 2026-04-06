@@ -392,8 +392,20 @@ function showToast(title) {
 
 // ── Navigation: go to URL via page injection (more reliable than chrome.tabs.update)
 async function navToPage(tabId, url) {
-  // Use chrome.tabs.update for navigation (more reliable)
-  await chrome.tabs.update(tabId, { url: url });
+  // For React apps like Grok, use window.location via executeScript
+  // This triggers client-side routing instead of full page reload
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: function(url) {
+        window.location.href = url;
+      },
+      args: [url]
+    });
+  } catch(e) {
+    // Fallback to chrome.tabs.update
+    await chrome.tabs.update(tabId, { url: url });
+  }
   // Give the tab time to start navigating
   await sleep(800);
 }
