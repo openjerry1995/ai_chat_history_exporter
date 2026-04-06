@@ -153,7 +153,15 @@ const PLATFORM_REGISTRY = {
       }).filter(Boolean);
     },
     openSidebar: () => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+      // Find and click Show All button
+      const allElements = document.querySelectorAll('div, span, a, button');
+      for (const el of allElements) {
+        const text = (el.textContent || '').trim();
+        if (text === 'Show All' || text === '显示全部') {
+          el.click();
+          return;
+        }
+      }
     }
   },
   gemini: {
