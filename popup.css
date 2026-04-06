@@ -1,0 +1,223 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 16px;
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.3px;
+}
+
+.platform-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.platform-badge.detected {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.platform-badge.none {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.btn-group {
+  margin-bottom: 8px;
+}
+
+.btn {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+  font-family: inherit;
+  text-align: center;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.07);
+  color: #cbd5e1;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.btn-cancel {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+  margin-bottom: 6px;
+}
+
+.btn-cancel:hover {
+  background: rgba(239,68,68,0.22);
+}
+
+.progress {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.footer {
+  margin-top: 12px;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.footer-links a.donate-link {
+  font-size: 11px;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.footer-links a.donate-link:hover {
+  color: #94a3b8;
+}
+
+.footer-links .btn-report {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.06);
+  color: #64748b;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.footer-links .btn-report:hover {
+  background: rgba(255,255,255,0.1);
+  color: #94a3b8;
+}
+
+.status {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  word-break: break-word;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.status.success {
+  background: rgba(34,197,94,0.1);
+  color: #4ade80;
+}
+
+.status.success .count {
+  font-size: 16px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.status.success .donate-hint {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(34,197,94,0.2);
+  font-size: 12px;
+  color: #86efac;
+}
+
+.status.success .donate-btn {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 6px 14px;
+  background: rgba(59,130,246,0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.status.success .donate-btn:hover {
+  background: rgba(59,130,246,0.3);
+  color: #93c5fd;
+}
+
+.status.error {
+  background: rgba(239,68,68,0.1);
+  color: #f87171;
+}
+
+.hidden {
+  display: none;
+}
