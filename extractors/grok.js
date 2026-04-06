@@ -25,12 +25,16 @@ function grokExtractConv() {
 }
 
 function grokGetItems() {
+  console.log('[Grok] grokGetItems called');
   // Primary: get from command menu (Ctrl+K) which shows ALL conversations
   var items = grokGetItemsFromCommandMenu();
+  console.log('[Grok] Items from command menu:', items ? items.length : 0, items);
   if (items && items.length > 0) return items;
 
   // Fallback: get from sidebar (visible only)
+  console.log('[Grok] Trying sidebar fallback');
   var links = document.querySelectorAll('aside a[href^="/c/"], nav a[href^="/c/"]');
+  console.log('[Grok] Sidebar links found:', links.length);
   var items2 = [];
   for (var i = 0; i < links.length; i++) {
     var a = links[i];
@@ -39,19 +43,24 @@ function grokGetItems() {
       items2.push({ title: t, href: a.getAttribute("href") });
     }
   }
+  console.log('[Grok] Sidebar items:', items2.length, items2);
   return items2;
 }
 
 function grokGetItemsFromCommandMenu() {
+  console.log('[Grok] grokGetItemsFromCommandMenu called');
   // Opens command menu (Ctrl+K), extracts all conversation links, closes it
   // This is language-independent and shows ALL conversations
   // The command menu is a div with data-analytics-name="command_menu" or aria-labelledby
 
   // Check if command menu is already open
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+  console.log('[Grok] cmdDialog found:', !!cmdDialog);
   var wasOpen = !!(cmdDialog && cmdDialog.querySelector('[cmdk-list]'));
+  console.log('[Grok] wasOpen:', wasOpen);
 
   if (!wasOpen) {
+    console.log('[Grok] Pressing Ctrl+K to open command menu');
     // Press Ctrl+K to open command menu
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
     // Wait for dialog to appear
@@ -61,12 +70,14 @@ function grokGetItemsFromCommandMenu() {
       cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
       if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) break;
     }
+    console.log('[Grok] After wait, cmdDialog:', !!cmdDialog);
   }
 
   // Extract all conversation links from the command menu
   var items = [];
   if (cmdDialog) {
     var links = cmdDialog.querySelectorAll('a[href^="/c/"]');
+    console.log('[Grok] Links in cmdDialog:', links.length);
     for (var i = 0; i < links.length; i++) {
       var a = links[i];
       var t = a.textContent.trim().replace(/\s+/g, " ");
@@ -78,7 +89,9 @@ function grokGetItemsFromCommandMenu() {
 
   // If still no items, try generic approach - look for any visible /c/ links
   if (items.length === 0) {
+    console.log('[Grok] No items in cmdDialog, trying all /c/ links');
     var allLinks = document.querySelectorAll('a[href^="/c/"]');
+    console.log('[Grok] Total /c/ links on page:', allLinks.length);
     for (var j = 0; j < allLinks.length; j++) {
       var link = allLinks[j];
       var txt = link.textContent.trim().replace(/\s+/g, " ");
@@ -90,12 +103,14 @@ function grokGetItemsFromCommandMenu() {
 
   // Close the dialog with Escape if we opened it
   if (!wasOpen && cmdDialog) {
+    console.log('[Grok] Closing command menu');
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     setTimeout(function() {
       document.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape", bubbles: true }));
     }, 50);
   }
 
+  console.log('[Grok] Returning items:', items.length);
   return items;
 }
 
