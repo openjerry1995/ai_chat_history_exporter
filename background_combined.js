@@ -202,22 +202,23 @@ function grokGetItemsFromCommandMenu() {
 }
 
 function grokOpenSidebar() {
-  // Check if command menu is already open
-  var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-  if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
+  // Open command menu via Ctrl+K - this works from any Grok page
+  // Command menu shows ALL conversations grouped by time
   
-  // Find and click "显示全部" (or "See all" / "Show all") button
-  // The button is inside a div with text "显示全部" or "See all"
-  // Based on the HTML, it's a div with text "显示全部" inside cmdk-group-heading
-  var allElements = document.querySelectorAll('div, span, a, button');
-  for (var i = 0; i < allElements.length; i++) {
-    var el = allElements[i];
-    var text = (el.textContent || '').trim();
-    // Match "全部" (Chinese), "See all", "Show all" or just "all"
-    if (text === "显示全部" || text === "See all" || text === "Show all" || text === "all") {
-      el.click();
-      return;
-    }
+  // Check if already open
+  var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+  if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return;
+  
+  // Press Ctrl+K to open command menu
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
+  document.dispatchEvent(new KeyboardEvent("keyup", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
+  
+  // Wait for dialog to appear (up to 3s)
+  var maxWait = 3000;
+  var start = Date.now();
+  while (Date.now() - start < maxWait) {
+    cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+    if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return;
   }
 }
 
@@ -551,7 +552,7 @@ async function handleAllHistory(platform, tabId) {
     if (openSidebarFn) {
       await chrome.scripting.executeScript({ target: { tabId: tabId }, func: openSidebarFn });
     }
-    await sleep(1500);
+    await sleep(3000);
 
     // Scroll to load more
     await chrome.scripting.executeScript({
