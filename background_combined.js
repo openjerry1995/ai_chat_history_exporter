@@ -142,10 +142,8 @@ function grokExtractConv() {
 }
 
 function grokGetItems() {
-  console.log('[Grok Content] grokGetItems called');
-  // Primary: get from command menu (Ctrl+K) which shows ALL conversations
+  // Get items from command menu (which grokOpenSidebar opened)
   var items = grokGetItemsFromCommandMenu();
-  console.log('[Grok Content] Items from command menu:', items ? items.length : 0);
   if (items && items.length > 0) return items;
 
   // Fallback: get from sidebar (visible only)
@@ -162,36 +160,15 @@ function grokGetItems() {
 }
 
 function grokGetItemsFromCommandMenu() {
-  console.log('[Grok Content] grokGetItemsFromCommandMenu called');
-  // Opens command menu (Ctrl+K), extracts all conversation links, closes it
-  // This is language-independent and shows ALL conversations
-  // The command menu is a div with data-analytics-name="command_menu" or aria-labelledby
-
-  // Check if command menu is already open
+  // The command menu should be open after grokOpenSidebar() was called
+  // Look for the dialog and extract all /c/ links
+  
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-  console.log('[Grok Content] cmdDialog found initially:', !!cmdDialog);
-  var wasOpen = !!(cmdDialog && cmdDialog.querySelector('[cmdk-list]'));
-  console.log('[Grok Content] wasOpen:', wasOpen);
-
-  if (!wasOpen) {
-    console.log('[Grok Content] Pressing Ctrl+K');
-    // Press Ctrl+K to open command menu
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
-    // Wait for dialog to appear
-    var maxWait = 3000;
-    var start = Date.now();
-    while (Date.now() - start < maxWait) {
-      cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-      if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) break;
-    }
-    console.log('[Grok Content] After wait, cmdDialog:', !!cmdDialog);
-  }
-
-  // Extract all conversation links from the command menu
+  
   var items = [];
   if (cmdDialog) {
+    // Command menu is open, extract all conversation links
     var links = cmdDialog.querySelectorAll('a[href^="/c/"]');
-    console.log('[Grok Content] Links in cmdDialog:', links.length);
     for (var i = 0; i < links.length; i++) {
       var a = links[i];
       var t = a.textContent.trim().replace(/\s+/g, " ");
@@ -200,12 +177,10 @@ function grokGetItemsFromCommandMenu() {
       }
     }
   }
-
-  // If still no items, try generic approach - look for any visible /c/ links
+  
+  // If still no items, try page-level links (in case dialog is not found but sidebar is open)
   if (items.length === 0) {
-    console.log('[Grok Content] No items in cmdDialog, checking all /c/ links');
     var allLinks = document.querySelectorAll('a[href^="/c/"]');
-    console.log('[Grok Content] Total /c/ links on page:', allLinks.length);
     for (var j = 0; j < allLinks.length; j++) {
       var link = allLinks[j];
       var txt = link.textContent.trim().replace(/\s+/g, " ");
@@ -214,60 +189,25 @@ function grokGetItemsFromCommandMenu() {
       }
     }
   }
-
-  // Close the dialog with Escape if we opened it
-  if (!wasOpen && cmdDialog) {
-    console.log('[Grok Content] Closing command menu');
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    setTimeout(function() {
-      document.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape", bubbles: true }));
-    }, 50);
-  }
-
-  console.log('[Grok Content] Returning items:', items.length);
+  
   return items;
 }
 
 function grokOpenSidebar() {
-  // Click "显示全部" (or "See all" in English) to expand all conversations
-  // The sidebar shows only recent conversations, clicking this opens the full command menu
-  
-  // First check if command menu is already open
+  // Check if command menu is already open
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
   if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
   
-  // Try to find the "显示全部" / "See all" link in the sidebar
-  // It appears inside a cmdk-group with data-value containing "操作"
-  var showAllLinks = document.querySelectorAll('[data-value*="操作"] [cmdk-group-heading] div:last-child, [cmdk-group-heading] [class*="cursor-pointer"]');
-  for (var i = 0; i < showAllLinks.length; i++) {
-    var el = showAllLinks[i];
-    var text = el.textContent.trim();
-    if (text.indexOf("全部") !== -1 || text.indexOf("See all") !== -1 || text.indexOf("all") !== -1) {
+  // Find and click "显示全部" (or "See all" / "Show all") button
+  // The button is inside a div with text "显示全部" or "See all"
+  // Based on the HTML, it's a div with text "显示全部" inside cmdk-group-heading
+  var allElements = document.querySelectorAll('div, span, a, button');
+  for (var i = 0; i < allElements.length; i++) {
+    var el = allElements[i];
+    var text = (el.textContent || '').trim();
+    // Match "全部" (Chinese), "See all", "Show all" or just "all"
+    if (text === "显示全部" || text === "See all" || text === "Show all" || text === "all") {
       el.click();
-      return;
-    }
-  }
-  
-  // Fallback: find any element with text containing "全部" that is clickable
-  var allDivs = document.querySelectorAll('div[cmdk-group-heading], div[class*="group-heading"]');
-  for (var j = 0; j < allDivs.length; j++) {
-    var div = allDivs[j];
-    var txt = div.textContent.trim();
-    if (txt.indexOf("全部") !== -1 || txt.indexOf("See all") !== -1) {
-      var clickable = div.querySelector('div:last-child, [class*="cursor-pointer"], a, span, div');
-      if (clickable && clickable.textContent.trim().indexOf("全部") !== -1) {
-        clickable.click();
-        return;
-      }
-    }
-  }
-  
-  // Last resort: try to find any link/div with "全部" text
-  var everything = document.querySelectorAll('*');
-  for (var k = 0; k < everything.length; k++) {
-    var node = everything[k];
-    if (node.children.length === 0 && node.textContent.trim() === "全部") {
-      node.click();
       return;
     }
   }
