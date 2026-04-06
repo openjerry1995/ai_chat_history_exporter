@@ -597,11 +597,13 @@ async function handleAllHistory(platform, tabId) {
       return;
     }
     var itemsResult;
+    console.log('[BG] About to executeScript for platform:', platform, 'tabId:', tabId);
     try {
       itemsResult = await chrome.scripting.executeScript({
         target: { tabId: tabId },
         func: getItemsFn,
       });
+      console.log('[BG] executeScript completed, result:', itemsResult);
     } catch(e) {
       console.error("[BG] getItems error:", e.message);
       tryCatchSend({ type: "export-progress", status: "error", msg: "Could not read conversations. Try reloading the page." });
