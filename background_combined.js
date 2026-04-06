@@ -603,7 +603,8 @@ async function handleAllHistory(platform, tabId) {
         target: { tabId: tabId },
         func: getItemsFn,
       });
-      console.log('[BG] executeScript completed, result:', itemsResult);
+      var items = itemsResult && itemsResult[0] && itemsResult[0].result;
+      console.log('[BG] executeScript completed, raw result:', JSON.stringify(itemsResult), 'items:', items ? items.length : 0);
     } catch(e) {
       console.error("[BG] getItems error:", e.message);
       tryCatchSend({ type: "export-progress", status: "error", msg: "Could not read conversations. Try reloading the page." });
