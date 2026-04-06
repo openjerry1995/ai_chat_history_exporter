@@ -160,58 +160,49 @@ function grokGetItems() {
 }
 
 function grokGetItemsFromCommandMenu() {
-  // The command menu should be open after grokOpenSidebar() was called
-  // Try multiple selectors to find conversation items
-  var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-  var items = [];
+  // Wait for command menu to be ready (up to 5 seconds)
+  var maxWait = 5000;
+  var start = Date.now();
+  var cmdDialog = null;
   
-  if (!cmdDialog) {
-    // Try alternative selectors for the dialog
-    cmdDialog = document.querySelector('div[role="dialog"]');
+  while (Date.now() - start < maxWait) {
+    cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+    if (cmdDialog && cmdDialog.querySelectorAll('[cmdk-item]').length > 0) {
+      break;
+    }
+    cmdDialog = null;
+    // Small delay before retry
+    var waitUntil = Date.now() + 200;
+    while (Date.now() < waitUntil) { /* spin */ }
   }
   
+  var items = [];
   if (!cmdDialog) {
     return items;
   }
   
-  // Try to find conversation items using multiple approaches
-  var selectors = [
-    '[cmdk-item][data-value^="conversation:"]',
-    '[data-value^="conversation:"]',
-    'a[href^="/c/"]'
-  ];
-  
-  for (var s = 0; s < selectors.length; s++) {
-    var itemDivs = cmdDialog.querySelectorAll(selectors[s]);
-    if (itemDivs.length > 0) {
-      for (var i = 0; i < itemDivs.length; i++) {
-        var div = itemDivs[i];
-        var link = div.querySelector ? div.querySelector('a[href^="/c/"]') : div;
-        if (!link || !link.getAttribute) {
-          link = div.tagName === 'A' ? div : null;
-        }
-        if (!link) continue;
-        
-        var href = link.getAttribute("href");
-        if (!href || !href.startsWith('/c/')) continue;
-        
-        // Get text content - try multiple approaches
-        var textEl = div.querySelector('[class*="text-fg-primary"]');
-        var title = '';
-        if (textEl) {
-          title = textEl.textContent.trim().replace(/\s+/g, ' ');
-        } else {
-          // Get all text from the div, excluding timestamps
-          var allText = div.textContent || '';
-          title = allText.replace(/\d+(小时|天|月|年)前|\d+月\d+日|\d+年\d+月\d+日/g, '').trim().replace(/\s+/g, ' ');
-        }
-        
-        if (title && title.length > 2 && title.indexOf("新建私密聊天") === -1 && title.indexOf("操作") === -1) {
-          items.push({ title: title, href: href });
-        }
-      }
-      if (items.length > 0) break;
+  // Found dialog with items, now extract them
+  var itemDivs = cmdDialog.querySelectorAll('[cmdk-item]');
+  for (var i = 0; i < itemDivs.length; i++) {
+    var div = itemDivs[i];
+    var link = div.querySelector('a[href^="/c/"]');
+    if (!link) continue;
+    
+    var href = link.getAttribute("href");
+    if (!href || !href.startsWith('/c/')) continue;
+    
+    // Get title from text div
+    var textEl = div.querySelector('[class*="text-fg-primary"]');
+    var title = '';
+    if (textEl) {
+      title = textEl.textContent.trim().replace(/\s+/g, ' ');
     }
+    
+    if (!title || title.length < 2 || title.indexOf("新建私密聊天") !== -1) {
+      continue;
+    }
+    
+    items.push({ title: title, href: href });
   }
   
   return items;
