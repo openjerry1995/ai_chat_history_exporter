@@ -234,8 +234,21 @@ function grokOpenSidebar() {
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
   if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
 
-  document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
-  document.dispatchEvent(new KeyboardEvent("keyup", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
+  // Dispatch Ctrl+K using both key and code properties, multiple times
+  for (var i = 0; i < 3; i++) {
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true, cancelable: true }));
+    document.dispatchEvent(new KeyboardEvent("keyup", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
+  }
+  
+  // Wait for dialog to appear (up to 3s)
+  var maxWait = 3000;
+  var start = Date.now();
+  while (Date.now() - start < maxWait) {
+    cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+    if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return;
+    // Also try alternative selectors
+    if (cmdDialog && cmdDialog.querySelector('a[href^="/c/"]')) return;
+  }
 }
 
 // extractors/gemini.js — Gemini extraction functions
@@ -604,7 +617,10 @@ async function handleAllHistory(platform, tabId) {
         func: getItemsFn,
       });
       var items = itemsResult && itemsResult[0] && itemsResult[0].result;
-      console.log('[BG] executeScript completed, raw result:', JSON.stringify(itemsResult), 'items:', items ? items.length : 0);
+      console.log('[BG] executeScript completed, items count:', items ? items.length : 0);
+      if (items && items.length > 0) {
+        console.log('[BG] First few items:', items.slice(0, 3));
+      }
     } catch(e) {
       console.error("[BG] getItems error:", e.message);
       tryCatchSend({ type: "export-progress", status: "error", msg: "Could not read conversations. Try reloading the page." });
