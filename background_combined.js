@@ -229,25 +229,47 @@ function grokGetItemsFromCommandMenu() {
 }
 
 function grokOpenSidebar() {
-  // Open command menu via Ctrl+K - works regardless of language
-  // This shows ALL conversations grouped by time period
+  // Click "显示全部" (or "See all" in English) to expand all conversations
+  // The sidebar shows only recent conversations, clicking this opens the full command menu
+  
+  // First check if command menu is already open
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
   if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
-
-  // Dispatch Ctrl+K using both key and code properties, multiple times
-  for (var i = 0; i < 3; i++) {
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true, cancelable: true }));
-    document.dispatchEvent(new KeyboardEvent("keyup", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
+  
+  // Try to find the "显示全部" / "See all" link in the sidebar
+  // It appears inside a cmdk-group with data-value containing "操作"
+  var showAllLinks = document.querySelectorAll('[data-value*="操作"] [cmdk-group-heading] div:last-child, [cmdk-group-heading] [class*="cursor-pointer"]');
+  for (var i = 0; i < showAllLinks.length; i++) {
+    var el = showAllLinks[i];
+    var text = el.textContent.trim();
+    if (text.indexOf("全部") !== -1 || text.indexOf("See all") !== -1 || text.indexOf("all") !== -1) {
+      el.click();
+      return;
+    }
   }
   
-  // Wait for dialog to appear (up to 3s)
-  var maxWait = 3000;
-  var start = Date.now();
-  while (Date.now() - start < maxWait) {
-    cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-    if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return;
-    // Also try alternative selectors
-    if (cmdDialog && cmdDialog.querySelector('a[href^="/c/"]')) return;
+  // Fallback: find any element with text containing "全部" that is clickable
+  var allDivs = document.querySelectorAll('div[cmdk-group-heading], div[class*="group-heading"]');
+  for (var j = 0; j < allDivs.length; j++) {
+    var div = allDivs[j];
+    var txt = div.textContent.trim();
+    if (txt.indexOf("全部") !== -1 || txt.indexOf("See all") !== -1) {
+      var clickable = div.querySelector('div:last-child, [class*="cursor-pointer"], a, span, div');
+      if (clickable && clickable.textContent.trim().indexOf("全部") !== -1) {
+        clickable.click();
+        return;
+      }
+    }
+  }
+  
+  // Last resort: try to find any link/div with "全部" text
+  var everything = document.querySelectorAll('*');
+  for (var k = 0; k < everything.length; k++) {
+    var node = everything[k];
+    if (node.children.length === 0 && node.textContent.trim() === "全部") {
+      node.click();
+      return;
+    }
   }
 }
 
