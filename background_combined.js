@@ -178,11 +178,18 @@ function grokGetItemsFromCommandMenu() {
   
   var items = [];
   if (!cmdDialog) {
+    // Debug: try finding any dialog
+    var allDialogs = document.querySelectorAll('div[role="dialog"]');
+    console.log('[Grok] cmdDialog not found, all dialogs:', allDialogs.length);
+    var anyCmdItems = document.querySelectorAll('[cmdk-item]');
+    console.log('[Grok] Total cmdk-item on page:', anyCmdItems.length);
     return items;
   }
   
   // Found dialog with items, now extract them
   var itemDivs = cmdDialog.querySelectorAll('[cmdk-item]');
+  console.log('[Grok] Found cmdk-item in cmdDialog:', itemDivs.length);
+  
   for (var i = 0; i < itemDivs.length; i++) {
     var div = itemDivs[i];
     var link = div.querySelector('a[href^="/c/"]');
@@ -205,18 +212,19 @@ function grokGetItemsFromCommandMenu() {
     items.push({ title: title, href: href });
   }
   
+  console.log('[Grok] Total items extracted:', items.length);
   return items;
 }
 
 function grokOpenSidebar() {
-  // Click "显示全部" button to open the full conversation list
+  // Click "Show All" button to open the full conversation list
   // This button appears in the sidebar when not all conversations are shown
   
   // Check if command menu is already open
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
   if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
   
-  // Wait up to 5 seconds for "显示全部" button to appear
+  // Wait up to 5 seconds for "Show All" / "显示全部" button to appear
   var maxWait = 5000;
   var start = Date.now();
   var clicked = false;
@@ -226,7 +234,10 @@ function grokOpenSidebar() {
     for (var i = 0; i < allElements.length; i++) {
       var el = allElements[i];
       var text = (el.textContent || '').trim();
-      if (text === '显示全部' || text === 'See all' || text === 'Show all' || text === 'all') {
+      // Match various forms of "show all" in different languages
+      if (text === 'Show All' || text === 'Show all' || text === 'show all' || 
+          text === '显示全部' || text === 'See all' || text === 'see all' || 
+          text === 'See All' || text === 'All') {
         el.click();
         clicked = true;
         break;
@@ -245,7 +256,7 @@ function grokOpenSidebar() {
     var menuStart = Date.now();
     while (Date.now() - menuStart < waitForMenu) {
       cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-      if (cmdDialog && cmdDialog.querySelectorAll('[cmdk-item][data-value^="conversation:"]').length > 0) {
+      if (cmdDialog && cmdDialog.querySelectorAll('[cmdk-item]').length > 0) {
         return;
       }
     }
