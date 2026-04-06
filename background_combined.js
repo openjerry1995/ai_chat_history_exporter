@@ -161,40 +161,56 @@ function grokGetItems() {
 
 function grokGetItemsFromCommandMenu() {
   // The command menu should be open after grokOpenSidebar() was called
-  // The <a> elements are empty (text is in sibling divs due to CSS grid layout)
-  // We need to find each item, then extract text from sibling divs
-  
+  // Try multiple selectors to find conversation items
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
   var items = [];
   
-  if (cmdDialog) {
-    // Get all cmdk-item divs that contain conversation links
-    var itemDivs = cmdDialog.querySelectorAll('[cmdk-item][data-value^="conversation:"]');
-    for (var i = 0; i < itemDivs.length; i++) {
-      var item = itemDivs[i];
-      var link = item.querySelector('a[href^="/c/"]');
-      if (!link) continue;
-      
-      var href = link.getAttribute("href");
-      
-      // The text is in a sibling div, not inside <a>
-      // Find the div with text class inside this item
-      var textEl = item.querySelector('[class*="text-fg-primary"]');
-      if (!textEl) {
-        // Try to get any text from the item (excluding time stamps)
-        var allText = item.textContent || '';
-        // Remove timestamp patterns like "3小时前", "昨天", etc.
-        var cleanText = allText.replace(/\d+(小时|天|月|年)前|\d+月\d+日|\d+年\d+月\d+日/g, '').trim();
-        cleanText = cleanText.replace(/\s+/g, ' ').trim();
-        if (cleanText && cleanText.length > 2 && cleanText.indexOf("新建私密聊天") === -1) {
-          items.push({ title: cleanText, href: href });
+  if (!cmdDialog) {
+    // Try alternative selectors for the dialog
+    cmdDialog = document.querySelector('div[role="dialog"]');
+  }
+  
+  if (!cmdDialog) {
+    return items;
+  }
+  
+  // Try to find conversation items using multiple approaches
+  var selectors = [
+    '[cmdk-item][data-value^="conversation:"]',
+    '[data-value^="conversation:"]',
+    'a[href^="/c/"]'
+  ];
+  
+  for (var s = 0; s < selectors.length; s++) {
+    var itemDivs = cmdDialog.querySelectorAll(selectors[s]);
+    if (itemDivs.length > 0) {
+      for (var i = 0; i < itemDivs.length; i++) {
+        var div = itemDivs[i];
+        var link = div.querySelector ? div.querySelector('a[href^="/c/"]') : div;
+        if (!link || !link.getAttribute) {
+          link = div.tagName === 'A' ? div : null;
         }
-      } else {
-        var title = textEl.textContent.trim().replace(/\s+/g, " ");
-        if (title && title.indexOf("新建私密聊天") === -1) {
+        if (!link) continue;
+        
+        var href = link.getAttribute("href");
+        if (!href || !href.startsWith('/c/')) continue;
+        
+        // Get text content - try multiple approaches
+        var textEl = div.querySelector('[class*="text-fg-primary"]');
+        var title = '';
+        if (textEl) {
+          title = textEl.textContent.trim().replace(/\s+/g, ' ');
+        } else {
+          // Get all text from the div, excluding timestamps
+          var allText = div.textContent || '';
+          title = allText.replace(/\d+(小时|天|月|年)前|\d+月\d+日|\d+年\d+月\d+日/g, '').trim().replace(/\s+/g, ' ');
+        }
+        
+        if (title && title.length > 2 && title.indexOf("新建私密聊天") === -1 && title.indexOf("操作") === -1) {
           items.push({ title: title, href: href });
         }
       }
+      if (items.length > 0) break;
     }
   }
   
