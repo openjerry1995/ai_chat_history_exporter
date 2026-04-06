@@ -202,23 +202,46 @@ function grokGetItemsFromCommandMenu() {
 }
 
 function grokOpenSidebar() {
-  // Open command menu via Ctrl+K - this works from any Grok page
-  // Command menu shows ALL conversations grouped by time
+  // Click "显示全部" button to open the full conversation list
+  // This button appears in the sidebar when not all conversations are shown
   
-  // Check if already open
+  // Check if command menu is already open
   var cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-  if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return;
+  if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return; // Already open
   
-  // Press Ctrl+K to open command menu
-  document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
-  document.dispatchEvent(new KeyboardEvent("keyup", { key: "k", code: "KeyK", ctrlKey: true, bubbles: true }));
-  
-  // Wait for dialog to appear (up to 3s)
-  var maxWait = 3000;
+  // Wait up to 5 seconds for "显示全部" button to appear
+  var maxWait = 5000;
   var start = Date.now();
-  while (Date.now() - start < maxWait) {
-    cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
-    if (cmdDialog && cmdDialog.querySelector('[cmdk-list]')) return;
+  var clicked = false;
+  
+  while (Date.now() - start < maxWait && !clicked) {
+    var allElements = document.querySelectorAll('div, span, a, button');
+    for (var i = 0; i < allElements.length; i++) {
+      var el = allElements[i];
+      var text = (el.textContent || '').trim();
+      if (text === '显示全部' || text === 'See all' || text === 'Show all' || text === 'all') {
+        el.click();
+        clicked = true;
+        break;
+      }
+    }
+    if (!clicked) {
+      // Wait a bit before retrying
+      var waitUntil = Date.now() + 500;
+      while (Date.now() < waitUntil) { /* spin */ }
+    }
+  }
+  
+  // After clicking, wait for the command menu to fully load
+  if (clicked) {
+    var waitForMenu = 3000;
+    var menuStart = Date.now();
+    while (Date.now() - menuStart < waitForMenu) {
+      cmdDialog = document.querySelector('div[data-analytics-name="command_menu"]');
+      if (cmdDialog && cmdDialog.querySelectorAll('[cmdk-item][data-value^="conversation:"]').length > 0) {
+        return;
+      }
+    }
   }
 }
 
@@ -552,7 +575,7 @@ async function handleAllHistory(platform, tabId) {
     if (openSidebarFn) {
       await chrome.scripting.executeScript({ target: { tabId: tabId }, func: openSidebarFn });
     }
-    await sleep(3000);
+    await sleep(8000);
 
     // Scroll to load more
     await chrome.scripting.executeScript({
