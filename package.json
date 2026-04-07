@@ -4,6 +4,32 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
-  }
+    "esbuild": "^0.28.0",
+    "playwright": "^1.59.1"
+  },
+  "name": "ai_chat_history_exporter",
+  "version": "1.0.0",
+  "description": "Save your AI conversations permanently. Export single chats or your entire history from Grok, Gemini, ChatGPT, and Claude — all in clean Markdown format.",
+  "main": "background.js",
+  "scripts": {
+    "test": "node tests/test-extension.js interactive",
+    "test:chatgpt": "node tests/deep-analyze.js chatgpt",
+    "test:claude": "node tests/deep-analyze.js claude",
+    "test:grok": "node tests/deep-analyze.js grok",
+    "test:grok-export": "node tests/test-grok-export.js",
+    "test:gemini": "node tests/deep-analyze.js gemini",
+    "analyze": "node tests/deep-analyze.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openjerry1995/ai_chat_history_exporter.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/openjerry1995/ai_chat_history_exporter/issues"
+  },
+  "homepage": "https://github.com/openjerry1995/ai_chat_history_exporter#readme"
 }

@@ -23,3 +23,9 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+
+# Debug files (do not commit)
+*debug*.png
+*-debug*.png
+tests/
+.claude/
