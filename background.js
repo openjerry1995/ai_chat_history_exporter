@@ -6,6 +6,25 @@
 // ── Helpers ──
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Random delay helper to avoid detection
+function randomSleep(minMs, maxMs) {
+  const randomMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  console.log(`[BG] Random delay: ${randomMs}ms (${minMs}-${maxMs}ms range)`);
+  return sleep(randomMs);
+}
+
+// Get delay configuration
+function getDelayTime(delayConfig) {
+  if (!delayConfig) {
+    return { minMs: 2000, maxMs: 4000 }; // Default: 2-4 seconds
+  }
+  const { minDelay, maxDelay } = delayConfig;
+  return {
+    minMs: minDelay * 1000,
+    maxMs: maxDelay * 1000
+  };
+}
+
 function formatSingleConv(title, messages) {
   const lines = [];
   lines.push('# ' + title);
@@ -632,7 +651,7 @@ let _cancelRequested = false;
 let _accumulatedContent = [];
 let _accumulatedCount = 0;
 
-async function handleAllHistory(platform, tabId) {
+async function handleAllHistory(platform, tabId, delayConfig = null) {
   _cancelRequested = false;
   _accumulatedContent = [];
   _accumulatedCount = 0;
@@ -798,7 +817,8 @@ async function handleAllHistory(platform, tabId) {
         try {
           await navToPage(tabId, navUrl);
           await waitForPageReady(tabId, platform);
-          await sleep(1500);
+          const delayTimes = getDelayTime(delayConfig);
+          await randomSleep(delayTimes.minMs, delayTimes.maxMs);
 
           // Poll extraction until we get messages (with timeout)
           let extractionDone = false;
@@ -849,6 +869,15 @@ async function handleAllHistory(platform, tabId) {
           func: showToast,
           args: [item.title]
         });
+
+        // Add small random delay before next conversation to simulate human behavior
+        if (i < items.length - 1) { // Don't delay after the last one
+          const smallDelay = getDelayTime(delayConfig);
+          await randomSleep(
+            Math.floor(smallDelay.minMs / 2), // Half the main delay
+            Math.floor(smallDelay.maxMs / 2)
+          );
+        }
       } else {
         errors++;
         console.warn('[BG] No messages for:', item.title);
@@ -893,7 +922,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   if (msg.type === 'export-all') {
-    handleAllHistory(msg.platform, msg.tabId).catch(e => {
+    handleAllHistory(msg.platform, msg.tabId, msg.delayConfig).catch(e => {
       console.error('[BG] export-all error:', e);
       tryCatchSend({ type: 'export-progress', status: 'error', msg: e.message });
     });

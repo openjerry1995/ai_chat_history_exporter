@@ -8,8 +8,8 @@ function setStatus(msg, type) {
   var el = document.getElementById('status');
   if (!el) return;
   if (type === 'success' && msg.indexOf('Choose where to save') !== -1) {
-    var plainPart = msg.replace('\n\nSupport the dev: ko-fi.com/jerryopen', '');
-    el.innerHTML = '<span class="count">' + escHtml(plainPart) + '</span><span class="donate-hint">Enjoying it? Support the dev:</span><a class="donate-btn" href="https://ko-fi.com/jerryopen" target="_blank" rel="noopener">Buy me a coffee ☕</a>';
+    var plainPart = msg.replace('\n\nSupports dev: ko-fi.com/jerryopen', '');
+    el.innerHTML = '<span class="count">' + escHtml(plainPart) + '</span><span class="donate-hint">Enjoying it? Support dev:</span><a class="donate-btn" href="https://ko-fi.com/jerryopen" target="_blank" rel="noopener">Buy me a coffee ☕</a>';
   } else {
     el.textContent = msg;
   }
@@ -70,6 +70,45 @@ function detectPlatformLabel(platform) {
   return null;
 }
 
+// 获取延迟配置
+function getDelayConfig() {
+  var mode = document.getElementById('delay-mode').value;
+  var minDelay = 2; // 默认最小延迟（秒）
+  var maxDelay = 4; // 默认最大延迟（秒）
+
+  switch(mode) {
+    case 'conservative':
+      minDelay = 3;
+      maxDelay = 6;
+      break;
+    case 'normal':
+      minDelay = 2;
+      maxDelay = 4;
+      break;
+    case 'aggressive':
+      minDelay = 1;
+      maxDelay = 3;
+      break;
+    case 'custom':
+      var customDelay = parseInt(document.getElementById('custom-delay').value) || 2;
+      minDelay = Math.max(1, customDelay - 1);
+      maxDelay = Math.min(30, customDelay + 1);
+      break;
+  }
+
+  return { minDelay, maxDelay, mode };
+}
+
+// 处理延迟模式变化
+document.getElementById('delay-mode').addEventListener('change', function() {
+  var customInput = document.getElementById('custom-delay');
+  if (this.value === 'custom') {
+    customInput.classList.remove('hidden');
+  } else {
+    customInput.classList.add('hidden');
+  }
+});
+
 // On load: detect current tab
 chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
   if (tabs && tabs.length > 0 && tabs[0].url) {
@@ -121,6 +160,7 @@ function launchExport(scope) {
   }
 
   var platform = _detectedPlatform;
+  var delayConfig = getDelayConfig();
 
   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
     if (!tabs || !tabs[0]) { setStatus('No active tab.', 'error'); return; }
@@ -138,6 +178,7 @@ function launchExport(scope) {
         type: scope === 'all' ? 'export-all' : 'export-current',
         platform: platform,
         tabId: tab.id,
+        delayConfig: delayConfig // 传递延迟配置
       });
     } catch(err) {
       setStatus(err.message, 'error');

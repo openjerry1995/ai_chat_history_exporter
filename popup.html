@@ -11,6 +11,18 @@
 
   <div class="platform-badge" id="platform-badge">Detecting...</div>
 
+  <!-- 延迟配置部分 -->
+  <div class="config-section">
+    <div class="config-label">Export Delay (prevent blocking):</div>
+    <select id="delay-mode" class="config-select">
+      <option value="conservative">Conservative (3-6s)</option>
+      <option value="normal" selected>Normal (2-4s)</option>
+      <option value="aggressive">Aggressive (1-3s)</option>
+      <option value="custom">Custom</option>
+    </select>
+    <input type="number" id="custom-delay" class="config-input hidden" min="1" max="30" value="2" placeholder="1-30s">
+  </div>
+
   <div class="btn-group">
     <button id="btn-export-current" class="btn btn-primary btn-full">Export Current Chat</button>
   </div>

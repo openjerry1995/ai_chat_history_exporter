@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Chat History Exporter",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Export chat history from Grok, Gemini, ChatGPT and Claude — single chats or your entire history",
   "permissions": [
     "activeTab",
@@ -15,7 +15,7 @@
     "https://claude.ai/*"
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup_new.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
