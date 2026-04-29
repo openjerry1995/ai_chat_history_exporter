@@ -1,0 +1,69 @@
+🎉 代码已成功推送到 GitHub！
+
+## 🚀 安装步骤
+
+### 1. 下载代码
+访问 GitHub 并下载 ZIP：
+```
+https://github.com/openjerry1995/ai_chat_history_exporter/archive/refs/heads/master.zip
+```
+
+### 2. 安装到 Chrome
+1. 打开 `chrome://extensions/`
+2. 开启右上角 "开发者模式"
+3. 点击 "加载已解压的扩展程序"
+4. 选择解压后的文件夹
+
+### 3. 测试新功能
+1. 打开 AI 网站 (ChatGPT/Claude/Grok/Gemini)
+2. 点击扩展图标
+3. 你会看到新的 "Export Delay" 配置
+4. 选择 "Conservative" 模式测试
+5. 尝试导出少量历史
+
+## 🎯 新功能特性
+
+### 延迟配置模式
+- **Conservative (3-6s)** - 最安全，防止封禁
+- **Normal (2-4s)** - 默认推荐，平衡性能
+- **Aggressive (1-3s)** - 最快，仅小规模使用
+- **Custom (1-30s)** - 自定义延迟时间
+
+### 智能随机化
+- 每次对话间隔随机变化
+- 模拟人类浏览行为
+- 两层延迟策略
+
+## 📊 性能对比
+
+| 模式 | 延迟 | 10个对话时间 | 封禁风险 |
+|------|------|------------|----------|
+| 旧版 | 固定1.5s | 15秒 | 高 |
+| Conservative | 随机3-6s | 45秒 | 极低 |
+| Normal | 随机2-4s | 30秒 | 低 |
+| Aggressive | 随机1-3s | 20秒 | 中 |
+
+## 🧪 测试建议
+
+1. 先用 Conservative 模式测试 5-10个对话
+2. 打开 F12 控制台查看延迟日志：
+   ```
+   [BG] Random delay: 3245ms (2000-4000ms range)
+   ```
+3. 确认没有封禁警告后增加导出数量
+4. 逐步测试不同延迟模式
+
+## 📚 完整文档
+
+查看完整测试指南：
+https://github.com/openjerry1995/ai_chat_history_exporter/blob/master/TESTING_GUIDE.md
+
+查看功能更新详情：
+https://github.com/openjerry1995/ai_chat_history_exporter/blob/master/ANTI_DETECTION_UPDATE.md
+
+## 🐛 问题反馈
+
+如果测试时遇到任何问题，请在 GitHub 创建 Issue：
+https://github.com/openjerry1995/ai_chat_history_exporter/issues/new
+
+祝测试顺利！需要任何帮助随时告诉我。
