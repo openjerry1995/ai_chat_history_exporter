@@ -92,7 +92,12 @@ const PLATFORM_REGISTRY = {
       return msgs;
     },
     getItems: () => {
-      const nav = document.querySelector('nav');
+      // Find the correct nav container (the scrollport, not the tiny-bar)
+      // Try multiple selectors to handle different ChatGPT UI versions
+      let nav = document.querySelector('nav[class*="scrollport"]');
+      if (!nav) nav = document.querySelector('nav[class*="sidebar"]');
+      if (!nav) nav = document.querySelector('nav'); // fallback
+
       if (!nav) return [];
       const links = nav.querySelectorAll('a[href*="/c/"]');
       return Array.from(links).map(a => {
@@ -103,23 +108,49 @@ const PLATFORM_REGISTRY = {
       }).filter(Boolean);
     },
     openSidebar: () => {
-      const nav = document.querySelector('nav');
-      if (nav?.offsetParent) return;
-      let toggle = document.querySelector('[aria-label*="打开边栏"], [aria-label*="Open sidebar"], button[aria-label*="sidebar"]');
-      if (toggle) return toggle.click();
+      // Check if sidebar is already open (has visible conversation links)
+      let nav = document.querySelector('nav[class*="scrollport"]');
+      if (!nav) nav = document.querySelector('nav');
+      if (!nav) return false;
+
+      // Check if we can see conversation links in the sidebar
+      const visibleLinks = Array.from(nav.querySelectorAll('a[href*="/c/"]')).filter(a => a.offsetParent !== null);
+      if (visibleLinks.length > 0) {
+        console.log('[ChatGPT] Sidebar already open, found', visibleLinks.length, 'conversations');
+        return 'already-open'; // Already open, no need to wait
+      }
+
+      // Try to click "Open sidebar" button
+      const toggle = document.querySelector('button[aria-label="Open sidebar"]');
+      if (toggle) {
+        console.log('[ChatGPT] Clicking "Open sidebar" button');
+        toggle.click();
+        return 'opened'; // Just opened, need to wait for animation
+      }
+
+      // Fallback: try to find any button with sidebar in aria-label
       for (const btn of document.querySelectorAll('button')) {
         const aria = btn.getAttribute('aria-label') || '';
-        if (aria.includes('sidebar') || aria.includes('边栏')) return btn.click();
+        if (aria.toLowerCase().includes('open') && aria.toLowerCase().includes('sidebar')) {
+          console.log('[ChatGPT] Clicking sidebar button:', aria);
+          btn.click();
+          return 'opened'; // Just opened, need to wait for animation
+        }
       }
-      for (const btn of document.querySelectorAll('button')) {
-        if (btn.innerText.trim().includes('打开边栏')) return btn.click();
-      }
+
+      console.warn('[ChatGPT] Could not find sidebar toggle button');
+      return false;
     },
     // Scroll sidebar to load all conversations (lazy loading)
     scrollSidebar: () => {
-      const nav = document.querySelector('nav');
+      // Find the correct scrollable nav container
+      let nav = document.querySelector('nav[class*="scrollport"]');
+      if (!nav) nav = document.querySelector('nav[class*="sidebar"]');
+      if (!nav) nav = document.querySelector('nav');
+
       if (!nav) return { count: 0, done: true };
 
+      // Scroll to bottom
       nav.scrollTop = nav.scrollHeight;
 
       // Count current conversation links
@@ -131,6 +162,7 @@ const PLATFORM_REGISTRY = {
         }
       }).filter(Boolean);
 
+      console.log('[ChatGPT] Scroll: found', items.length, 'items');
       return { count: items.length, done: false };
     },
     // Debug: dump DOM structure for troubleshooting
@@ -631,28 +663,35 @@ async function triggerDownload(tabId, content, filename, platform) {
 
 // ── Single Chat Export
 async function handleCurrentChat(platform, tabId) {
-  const fns = PLATFORM_REGISTRY[platform];
-  if (!fns) throw new Error(`No registry for platform: ${platform}`);
-  const results = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: fns.extractCurrent
-  });
-  const result = results[0].result;
-  if (!result.messages?.length) throw new Error('No messages found');
-  const md = formatSingleConv(result.title, result.messages);
-  const ts = formatTimestamp();
-  const filename = `${platform}-chat-${ts}.md`;
-  await triggerDownload(tabId, md, filename, platform);
-  return { lines: md.split('\n').length };
+  _isExporting = true; // Mark export as started
+  try {
+    const fns = PLATFORM_REGISTRY[platform];
+    if (!fns) throw new Error(`No registry for platform: ${platform}`);
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: fns.extractCurrent
+    });
+    const result = results[0].result;
+    if (!result.messages?.length) throw new Error('No messages found');
+    const md = formatSingleConv(result.title, result.messages);
+    const ts = formatTimestamp();
+    const filename = `${platform}-chat-${ts}.md`;
+    await triggerDownload(tabId, md, filename, platform);
+    return { lines: md.split('\n').length };
+  } finally {
+    _isExporting = false; // Mark export as complete
+  }
 }
 
 // ── All History Export
 let _cancelRequested = false;
+let _isExporting = false; // Track if export is currently running
 let _accumulatedContent = [];
 let _accumulatedCount = 0;
 
 async function handleAllHistory(platform, tabId, delayConfig = null) {
   _cancelRequested = false;
+  _isExporting = true; // Mark export as started
   _accumulatedContent = [];
   _accumulatedCount = 0;
 
@@ -691,11 +730,16 @@ async function handleAllHistory(platform, tabId, delayConfig = null) {
       const clicked = openResult[0].result;
       console.log(`[BG] openSidebar attempt ${attempt + 1}:`, clicked);
 
-      if (clicked === true) {
-        // "See all" was clicked, done
+      if (clicked === 'already-open') {
+        // Sidebar already open, ready to proceed
+        break;
+      } else if (clicked === 'opened') {
+        // Just opened sidebar, wait for animation
+        console.log('[BG] Sidebar opened, waiting for animation...');
+        await sleep(2000);
         break;
       } else if (clicked === false) {
-        // Sidebar was expanded, need to wait and retry
+        // Sidebar was expanded (Grok-specific), need to wait and retry
         console.log('[BG] Sidebar expanded, waiting and retrying...');
         await sleep(2000);
       } else {
@@ -886,6 +930,8 @@ async function handleAllHistory(platform, tabId, delayConfig = null) {
 
     await chrome.scripting.executeScript({ target: { tabId }, func: clearProgress });
 
+    _isExporting = false; // Mark export as complete
+
     if (!_accumulatedContent.length) {
       tryCatchSend({ type: 'export-progress', status: 'error', msg: 'No conversations extracted. Page structure changed?' });
       return;
@@ -907,6 +953,7 @@ async function handleAllHistory(platform, tabId, delayConfig = null) {
 
   } catch(err) {
     console.error('[BG] handleAllHistory error:', err);
+    _isExporting = false; // Mark export as complete on error
     tryCatchSend({ type: 'export-progress', status: 'error', msg: err.message });
     try { await chrome.scripting.executeScript({ target: { tabId }, func: clearProgress }); } catch(e2) {}
   }
@@ -930,7 +977,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === 'cancel-export') {
     _cancelRequested = true;
+    _isExporting = false; // Mark export as complete on cancel
     tryCatchSend({ type: 'export-progress', status: 'done', msg: 'Stopped. Download ready...' });
+    return false;
+  }
+  if (msg.type === 'check-export-status') {
+    sendResponse({ isExporting: _isExporting });
     return false;
   }
 });

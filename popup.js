@@ -118,6 +118,15 @@ chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
       var label = detectPlatformLabel(platform);
       updateBadge(platform, label + ' detected', 'detected');
       setButtonsEnabled(true);
+
+      // Check if export is currently running
+      chrome.runtime.sendMessage({ type: 'check-export-status' }, function(response) {
+        if (response && response.isExporting) {
+          _exporting = true;
+          showCancel();
+          setStatus('Export in progress...', 'success');
+        }
+      });
     } else {
       updateBadge(null, 'Open a chat tab first', 'none');
       setButtonsEnabled(false);
