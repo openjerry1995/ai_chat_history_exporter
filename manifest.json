@@ -5,8 +5,7 @@
   "description": "Export chat history from Grok, Gemini, ChatGPT and Claude — single chats or your entire history",
   "permissions": [
     "activeTab",
-    "scripting",
-    "downloads"
+    "scripting"
   ],
   "host_permissions": [
     "https://grok.com/*",
